@@ -1,10 +1,9 @@
 from queue import PriorityQueue
 from urllib.parse import urlparse
 
-from bs4 import BeautifulSoup
+import html2text
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 
 
 def count_forward_slashes(url):
@@ -24,11 +23,11 @@ class WebScraper:
         self.max_links = max_links
         self.max_depth = max_depth
 
-        driver_options = webdriver.SafariOptions()
+        driver_options = webdriver.ChromeOptions()
         driver_options.headless = True
         driver_options.add_argument("--headless=new")
-        self.driver = webdriver.Safari(options=driver_options)
-        self.wait = WebDriverWait(self.driver, 10)
+
+        self.driver = webdriver.Chrome(options=driver_options)
 
     def __exit__(self, exception_type, exception_value, exception_traceback):
         print("Closing webdriver")
@@ -37,13 +36,15 @@ class WebScraper:
     def scrape_data_bfs_priority(self, starting_url):
         """Scrapes data from website and subpages
 
-        Currently uses selenium and Safari. Safari can't
-        run in headless mode. Plan to switch to Chrome
-        for headless operation (faster). Uses a breadth first
+        Currently uses selenium and Chrome which runs
+        in headless mode. Uses a breadth first
         search and priority queue where we scrape higher
         sublinks (less forward slashes in url).
         """
         print("Starting search")
+        if starting_url[-1] != "/":
+            starting_url = starting_url + "/"
+
         visited_urls = set()  # Keep track of visited URLs using a set
         queue = PriorityQueue()
         gathered_links = set()
@@ -53,50 +54,35 @@ class WebScraper:
         queue.put((0, starting_url))
 
         while not queue.empty() and len(visited_urls) < self.max_links:
-            current_depth, url = queue.get()
+            _, url = queue.get()
             if url not in visited_urls and not has_duplicate_https(url):
                 try:
                     print("Currently scraping ", url)
                     self.driver.get(url)
-                    # time.sleep(2)  # Give the page some time to load dynamically
-                    visited_urls.add(url)  # Add the URL to the visited_urls set
 
-                    """
-                    # Set up a loop to scroll and load dynamic content
-                    scroll_pause_time = 2  # Adjust the pause time as needed
-                    last_height = self.driver.execute_script("return document.body.scrollHeight")
-
-                    while True:
-                        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                        WebDriverWait(self.driver, 10).until(
-                            lambda driver: driver.execute_script("return document.body.scrollHeight") > last_height
-                        )
-                        last_height = self.driver.execute_script("return document.body.scrollHeight")
-                        time.sleep(scroll_pause_time)  # Pause for a moment to allow content to load
-
-                        # Break the loop when no more content is loaded
-                        if last_height == self.driver.execute_script("return document.body.scrollHeight"):
-                            break
-                    """
+                    visited_urls.add(
+                        url
+                    )  # Add the URL to the visited_urls set
 
                     # Extract the entire page's dynamic HTML content
                     dynamic_html = self.driver.page_source
 
-                    file_path = "data.txt"
-                    with open(file_path, "w") as file:
-                        file.write(dynamic_html)
+                    html_to_text = html2text.HTML2Text()
+                    html_to_text.ignore_links = True
+                    text = html_to_text.handle(dynamic_html)
+                    data.append(text)
+                    """
                     soup = BeautifulSoup(dynamic_html, "html.parser")
                     p_elements = soup.find_all("p")
                     for elem in p_elements:
                         if elem.text:
                             data.append(elem.text)
-                            # print("- ", repr(elem.text.replace("\n", " ")))
-                    # paragraph_elements = self.wait.until(EC.presence_of_all_elements_located((By.TAG_NAME, "p")))
-                    # p_elements = self.driver.find_elements_by_tag_name("p")
-                    # print("P ", p_elements)
+                    """
 
                     # Extract all href links using find_elements with By.XPATH
-                    href_links = self.driver.find_elements(By.XPATH, "//a[@href]")
+                    href_links = self.driver.find_elements(
+                        By.XPATH, "//a[@href]"
+                    )
                     extracted_urls = set(
                         link.get_attribute("href") for link in href_links
                     )
@@ -104,14 +90,16 @@ class WebScraper:
                     # Extract the base domain from the input URL
                     base_domain = urlparse(url).netloc
 
-                    # Filter extracted URLs to keep only those within the same domain as the base URL
+                    # Filter extracted URLs to keep only those within
+                    # the same domain as the base URL
                     subpage_urls = [
                         link
                         for link in extracted_urls
                         if urlparse(link).netloc == base_domain
                     ]
 
-                    # Assign priorities based on the number of forward slashes and add subpage URLs to the queue
+                    # Assign priorities based on the number of forward
+                    # slashes and add subpage URLs to the queue
                     for subpage_url in subpage_urls:
                         subpage_depth = count_forward_slashes(subpage_url)
                         queue.put((subpage_depth, subpage_url))
@@ -119,10 +107,10 @@ class WebScraper:
                     # Add the current URL to the gathered_links set
                     gathered_links.add(url)
 
-                except Exception:
+                finally:
                     pass
-                    # print(f"An error occurred: {e}")
 
+        print("Scraping complete")
         # return gathered_links
         return visited_urls, " ".join(data)
 
