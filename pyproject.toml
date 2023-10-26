@@ -1,2 +1,6 @@
+[project]
+name = "browserchatgpt"
+version = "0.0.1"
+
 [tool.black]
 line-length = 79

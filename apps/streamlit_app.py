@@ -1,25 +1,32 @@
 import streamlit as st
 import validators
 
-from src.browser_llm import BrowserLLM
-from src.web_data import WebData
-from src.web_scraper import WebScraper
+from browserchatgpt.web_llm import WebLLM
+from browserchatgpt.web_scraper import WebScraper
+from browserchatgpt.web_vectorstore import WebVectorStore
+
+
+def save_pages_to_txt(pages):
+    # store scraped data locally for debugging
+    file_path = "data.txt"
+    with open(file_path, "w") as file:
+        for page in pages:
+            file.write(page["url"])
+            file.write("\n")
+            file.write(page["text"])
 
 
 @st.cache_resource
 def get_llm(url):
-    web_scraper = WebScraper(max_links=1)
+    web_scraper = WebScraper(max_links=3)
 
-    _, data = web_scraper.scrape_data_bfs_priority(url)
+    pages = web_scraper.scrape_data_bfs_priority(url)
 
-    # store scraped data locally for debugging
-    file_path = "data.txt"
-    with open(file_path, "w") as file:
-        file.write(data)
+    save_pages_to_txt(pages)
 
-    web_data = WebData([data])
+    web_data = WebVectorStore(pages)
 
-    llm = BrowserLLM(web_data)
+    llm = WebLLM(web_data)
 
     return llm
 
@@ -43,11 +50,11 @@ if submit:
             print("Trying to load QA model.")
             llm = get_llm(url)
             st.session_state.global_data["llm"] = llm
-            st.header("Now chatting with {}".format(url))
+            st.caption("Now chatting with {}".format(url))
             st.session_state.messages = []
         except Exception as e:
-            st.header("Unable to load current URL")
-            st.header("{}".format(e))
+            st.caption("Unable to load current URL")
+            st.caption("{}".format(e))
     else:
         st.header("Invalid URL: {}".format(url))
 
@@ -66,7 +73,11 @@ if prompt := st.chat_input("How can I assist you?"):
 
         if "llm" in st.session_state.global_data:
             llm = st.session_state.global_data["llm"]
-            full_response = llm.query(prompt)
+            response = llm.query(prompt)
+
+            full_response = response
+            # answer, sources = response["answer"], response["sources"]
+            # full_response = answer + "\n" + sources
         else:
             full_response = "You must enter a valid URL to begin chatting."
 
