@@ -1,5 +1,5 @@
 from browserchatgpt.web_llm import WebLLM
-from browserchatgpt.web_scraper import WebScraper
+from browserchatgpt.web_scraper_concurrent import WebScraper
 from browserchatgpt.web_vectorstore import WebVectorStore
 
 url = input("Enter URL for assistance: ")

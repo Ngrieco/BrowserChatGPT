@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 import html2text
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-
+import time
 
 def count_forward_slashes(url):
     return url.count("/")
@@ -66,6 +66,8 @@ class WebScraper:
         if driver is None:
             raise ValueError("No driver specified.")
 
+        
+
         pages = []
 
         self.unvisited_lock.acquire()
@@ -74,6 +76,8 @@ class WebScraper:
             and len(self.visited_urls) < self.max_links
         ):
             url = self.unvisited_urls.pop(0)
+            thread_id = threading.get_ident()
+            print(f"Thread {threading.current_thread().name} {url}")
 
             if self.unvisited_lock.locked():
                 self.unvisited_lock.release()
@@ -81,6 +85,7 @@ class WebScraper:
 
             if url not in self.visited_urls and not has_duplicate_https(url):
                 try:
+                    # print("Scraping ", url)
                     driver.get(url)
 
                     # Add the URL to the visited_urls set
@@ -122,8 +127,9 @@ class WebScraper:
                             subpage_url not in self.visited_urls
                             and subpage_url not in self.unvisited_urls
                         ):
+                            # print("Adding ", subpage_url)
                             self.unvisited_urls.append(subpage_url)
-
+                    # print()
                     self.unvisited_urls = sorted(
                         self.unvisited_urls, key=count_forward_slashes
                     )
@@ -154,3 +160,15 @@ class WebScraper:
 
         for thread in self.threads:
             thread.join()
+
+if __name__ == "__main__":
+    url = "https://www.bethanychurch.tv"
+
+    threads = 3
+    max_links = 20
+
+    start = time.time()
+    web_scraper = WebScraper(max_links=max_links, threads=threads)
+    web_scraper.scrape(url)
+    end = time.time()
+    print("Total time ", end - start)

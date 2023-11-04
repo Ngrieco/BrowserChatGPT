@@ -3,13 +3,16 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
-from browserchatgpt.web_scraper import WebScraper
+from browserchatgpt.web_scraper_concurrent import WebScraper
 
+def count_forward_slashes(url):
+    return url.count("/")
 
 def main():
-    url = "https://www.bethanychurch.tv"
+    #url = "https://www.bethanychurch.tv"
+    url = "https://www.nba.com"
 
-    max_links_list = [5, 50, 100]
+    max_links_list = [5, 25, 50]
     threads_list = [1, 3, 5]
     threads_names = ["1", "3", "5"]
     times = [[] for i in range(len(threads_list))]
@@ -22,6 +25,14 @@ def main():
             web_scraper.scrape(url)
             end = time.time()
             times[i].append(end - start)
+            print("Total time ", end - start)
+
+    print("# Visited urls ", len(web_scraper.visited_urls))
+    file_path = "visited_pages.txt"
+    with open(file_path, "w") as file:
+        sorted_urls = sorted(web_scraper.visited_urls, key = lambda x: (count_forward_slashes(x), len(x)))
+        for url in sorted_urls:
+            file.write(url + "\n")
 
     # set width of bar
     barWidth = 0.25
