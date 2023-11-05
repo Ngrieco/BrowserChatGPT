@@ -2,8 +2,8 @@ import streamlit as st
 import validators
 
 from browserchatgpt.web_llm import WebLLM
-from browserchatgpt.web_scraper_concurrent import WebScraper
-from browserchatgpt.web_vectorstore import WebVectorStore
+from browserchatgpt.web_scraper_concurrent import WebScraperConcurrent
+from browserchatgpt.web_vector_store import WebVectorStore
 
 
 def save_pages_to_txt(pages):
@@ -18,23 +18,29 @@ def save_pages_to_txt(pages):
 
 @st.cache_resource
 def get_llm(url):
-    web_scraper = WebScraper(max_links=3)
+    print("Creating web scraper")
+    web_scraper = WebScraperConcurrent(max_links=3, threads=3)
 
-    pages = web_scraper.scrape_data_bfs_priority(url)
+    print(f"Scraping {url}")
+    pages = web_scraper.scrape(url)
 
     save_pages_to_txt(pages)
 
+    print("Storing data is vector store")
     web_data = WebVectorStore(pages)
 
+    print("Creating RetrievalQALLM")
     llm = WebLLM(web_data)
 
     return llm
 
 
 if "global_data" not in st.session_state:
+    print("Creating session_state.global_data")
     st.session_state.global_data = {}
 
 if "messages" not in st.session_state:
+    print("Creating session_state.messages")
     st.session_state.messages = []
 
 st.title("BrowserChatGPT")
@@ -44,6 +50,7 @@ url = form.text_input(label="Enter website you'd like to chat with")
 submit = form.form_submit_button(label="Submit")
 
 if submit:
+    print("Submit - checking url")
     valid_url = validators.url(url)
     if valid_url:
         try:

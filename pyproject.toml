@@ -1,6 +1,17 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+
 [project]
 name = "browserchatgpt"
 version = "0.0.1"
 
+[tool.setuptools.packages.find]
+where = ["browserchatgpt"]
+include = ["browserchatgpt"]
+
+
 [tool.black]
-line-length = 79
+line-length = 89
+
+[tool.flake8]
+max-line-length = 89

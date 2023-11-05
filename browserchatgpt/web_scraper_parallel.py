@@ -1,6 +1,5 @@
 import multiprocessing
 import os
-import threading
 import time
 from urllib.parse import urlparse
 
@@ -8,31 +7,31 @@ import html2text
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
-max_urls = 20
-num_processes = 3
-
 driver_options = webdriver.ChromeOptions()
 driver_options.headless = True
 driver_options.add_argument("--headless=new")
+print("web_scraper_parallel")
 print(f"Process ID: {os.getpid()} creating driver")
 driver = webdriver.Chrome(options=driver_options)
 print(f"Process ID: {os.getpid()} done creating driver")
 
+
 def count_forward_slashes(url):
     return url.count("/")
+
 
 def has_duplicate_https(url):
     return url.count("https://") > 1
 
-class WebScraper:
-    def __init__(self, max_links=100, processes=1):
-        self.max_links = max_links
+
+class WebScraperParallel:
+    def __init__(self, max_urls=100, processes=1):
+        self.max_urls = max_urls
         self.num_processes = processes
 
         driver_options = webdriver.ChromeOptions()
         driver_options.headless = True
         driver_options.add_argument("--headless=new")
-
 
     def __exit__(self):
         print("Closing webdrivers")
@@ -40,11 +39,11 @@ class WebScraper:
             driver.quit()
 
     def scrape(self, url):
-        pages = parallel_scrape(url, self.num_processes)
+        pages = parallel_scrape(url, self.num_processes, self.max_urls)
         return pages
 
 
-def parallel_scrape(url, num_processes):
+def parallel_scrape(url, num_processes, max_urls):
     with multiprocessing.Manager() as manager:
         processes = []
         lock = manager.Lock()
@@ -55,7 +54,6 @@ def parallel_scrape(url, num_processes):
 
         url_queue.put(url)
         for i in range(num_processes):
-            
             # create parallel scraping workers
             process = multiprocessing.Process(
                 target=scrape_worker,
@@ -65,8 +63,9 @@ def parallel_scrape(url, num_processes):
                     pages,
                     running_workers,
                     lock,
+                    max_urls,
                 ),
-                name=f"process_{i}"
+                name=f"process_{i}",
             )
 
             processes.append(process)
@@ -77,6 +76,7 @@ def parallel_scrape(url, num_processes):
 
         return pages
 
+
 def scrape_data(url, url_queue, visited_urls, pages):
     """Scrapes data from website and subpages
 
@@ -86,7 +86,6 @@ def scrape_data(url, url_queue, visited_urls, pages):
     sublinks (less forward slashes in url).
     """
     print(f"Process ID: {os.getpid()} scraping {url}")
-
 
     global driver
     added_to_queue = []
@@ -104,9 +103,7 @@ def scrape_data(url, url_queue, visited_urls, pages):
 
             # Extract all href links using find_elements with By.XPATH
             href_links = driver.find_elements(By.XPATH, "//a[@href]")
-            extracted_urls = set(
-                link.get_attribute("href") for link in href_links
-            )
+            extracted_urls = set(link.get_attribute("href") for link in href_links)
 
             # Extract the base domain from the input URL
             base_domain = urlparse(url).netloc
@@ -114,19 +111,14 @@ def scrape_data(url, url_queue, visited_urls, pages):
             # Filter extracted URLs to keep only those within
             # the same domain as the base URL
             subpage_urls = [
-                link
-                for link in extracted_urls
-                if urlparse(link).netloc == base_domain
+                link for link in extracted_urls if urlparse(link).netloc == base_domain
             ]
 
             # Assign priorities based on the number of forward
             # slashes and add subpage URLs to the queue
             for subpage_url in subpage_urls:
-                if (
-                    subpage_url not in visited_urls
-                    and subpage_url not in added_to_queue
-                ):
-                    #print(f"Process ID: {os.getpid()} adding {subpage_url}")
+                if subpage_url not in visited_urls and subpage_url not in added_to_queue:
+                    # print(f"Process ID: {os.getpid()} adding {subpage_url}")
                     url_queue.put(subpage_url)
                     added_to_queue.append(subpage_url)
 
@@ -142,13 +134,12 @@ def scrape_data(url, url_queue, visited_urls, pages):
 
     return
 
-def scrape_worker(url_queue, visited_urls, pages, running_workers, lock):
-    #driver_id = int(multiprocessing.current_process().name.split("_")[-1])
 
+def scrape_worker(url_queue, visited_urls, pages, running_workers, lock, max_urls):
+    # driver_id = int(multiprocessing.current_process().name.split("_")[-1])
 
     print(f"Starting Process ID: {os.getpid()}")
     while True:
-
         lock.acquire()
         if (
             url_queue.empty()
@@ -172,28 +163,22 @@ def scrape_worker(url_queue, visited_urls, pages, running_workers, lock):
             lock.release()
             time.sleep(1)
 
-
     lock.release()
 
     print(f"Exiting Process ID: {os.getpid()}")
 
 
-
 if __name__ == "__main__":
-    
-
-
-
     print("Hello World")
 
     url = "https://www.bethanychurch.tv"
 
-    web_scraper = WebScraper(max_links=max_urls, processes=num_processes)
-    
+    max_urls = 10
+    num_processes = 3
+    web_scraper = WebScraperParallel(max_urls=max_urls, processes=num_processes)
+
     start = time.time()
     web_scraper.scrape(url)
     end = time.time()
 
-    
     print("Total time ", end - start)
-
