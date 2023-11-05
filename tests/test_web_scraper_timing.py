@@ -3,8 +3,8 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
-from browserchatgpt.web_scraper_concurrent import WebScraperConcurrent
 from browserchatgpt.backup_web_scraper_parallel import WebScraperParallel
+from browserchatgpt.web_scraper_concurrent import WebScraperConcurrent
 
 
 def count_forward_slashes(url):
@@ -62,10 +62,7 @@ def main():
     _ = plt.subplots(figsize=(12, 8))
 
     # Set position of bar on X axis
-    bars = [
-        [np.arange(len(concurrent_times[0]))]
-        for i in range(len(concurrent_times))
-    ]
+    bars = [[np.arange(len(concurrent_times[0]))] for i in range(len(concurrent_times))]
 
     bars = [np.arange(len(concurrent_times[0]))]
     for i in range(len(concurrent_times) - 1):
@@ -83,9 +80,7 @@ def main():
     # Adding Xticks
     plt.xlabel("Num links", fontweight="bold", fontsize=15)
     plt.ylabel("Execution time", fontweight="bold", fontsize=15)
-    plt.xticks(
-        [r + barWidth for r in range(len(max_links_list))], max_links_list
-    )
+    plt.xticks([r + barWidth for r in range(len(max_links_list))], max_links_list)
     plt.legend()
     plt.savefig("concurrent_timing.png")
 
@@ -102,9 +97,7 @@ def main():
     # Adding Xticks
     plt.xlabel("Num links", fontweight="bold", fontsize=15)
     plt.ylabel("Execution time", fontweight="bold", fontsize=15)
-    plt.xticks(
-        [r + barWidth for r in range(len(max_links_list))], max_links_list
-    )
+    plt.xticks([r + barWidth for r in range(len(max_links_list))], max_links_list)
     plt.legend()
     plt.savefig("parallel_timing.png")
 

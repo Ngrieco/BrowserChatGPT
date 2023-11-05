@@ -1,9 +1,8 @@
 # Database cache of web data from most recently visited urls
 import os
 import sqlite3
-
-from datetime import datetime
 import threading
+from datetime import datetime
 
 CACHE_REFRESH_TIME_SECONDS = 60
 MAX_SIZE_BYTES = 8192  # 1000000 ~ 1MB
@@ -40,14 +39,16 @@ class WebCache:
         conn, cursor = connection
 
         current_time_str = datetime.now().strftime(self.datetime_format)
-        
-        #print("add_page acquire")
+
+        # print("add_page acquire")
         self.cursor_edit_lock.acquire()
-        if not self.is_page_cached(url, connection, lock=False) or self.is_page_stale(url, connection, lock=False):
-            #print(f"Caching {url}")
-            
-            if(self.is_page_stale(url, connection, lock=False)):
-                #print("Deleting stale page")
+        if not self.is_page_cached(url, connection, lock=False) or self.is_page_stale(
+            url, connection, lock=False
+        ):
+            # print(f"Caching {url}")
+
+            if self.is_page_stale(url, connection, lock=False):
+                # print("Deleting stale page")
                 self.delete_page(url, connection)
 
             cursor.execute(
@@ -57,9 +58,9 @@ class WebCache:
             conn.commit()
         else:
             pass
-            #print(f"{url} is already cached.")
+            # print(f"{url} is already cached.")
 
-        #print("add_page release")
+        # print("add_page release")
         self.cursor_edit_lock.release()
 
     def get_page(self, url, connection):
@@ -67,7 +68,9 @@ class WebCache:
 
         self.cursor_edit_lock.acquire()
         if self.is_page_cached(url, connection, lock=False):
-            cursor.execute("SELECT url, text, subpage_urls FROM pages WHERE url=?", (url,))
+            cursor.execute(
+                "SELECT url, text, subpage_urls FROM pages WHERE url=?", (url,)
+            )
             result = cursor.fetchone()
             url, text, subpage_urls = result
             subpage_urls = subpage_urls.split(";")
@@ -79,7 +82,7 @@ class WebCache:
         self.cursor_edit_lock.release()
 
         return text, subpage_urls
-    
+
     def delete_page(self, url, connection):
         _, cursor = connection
         cursor.execute("DELETE FROM pages WHERE url=?", (url,))
@@ -92,16 +95,16 @@ class WebCache:
         return file_size
 
     def is_page_cached(self, url, connection, lock=True):
-        '''lock should only be set to true when running the function
-        as a standalone function. '''
+        """lock should only be set to true when running the function
+        as a standalone function."""
         _, cursor = connection
-        
+
         if lock:
-            #print("is_page_cached acquire")
+            # print("is_page_cached acquire")
             self.cursor_edit_lock.acquire()
             cursor.execute("SELECT url FROM pages WHERE url=?", (url,))
             result = cursor.fetchone()
-            #print("is_page_cached release")
+            # print("is_page_cached release")
             self.cursor_edit_lock.release()
         else:
             cursor.execute("SELECT url FROM pages WHERE url=?", (url,))
@@ -114,11 +117,11 @@ class WebCache:
 
         if self.is_page_cached(url, connection, lock=False):
             if lock:
-                #print("is_page_stale acquire")
+                # print("is_page_stale acquire")
                 self.cursor_edit_lock.acquire()
                 cursor.execute("SELECT url, timestamp FROM pages WHERE url=?", (url,))
                 result = cursor.fetchone()
-                #print("is_page_stale release")
+                # print("is_page_stale release")
                 self.cursor_edit_lock.release()
             else:
                 cursor.execute("SELECT url, timestamp FROM pages WHERE url=?", (url,))

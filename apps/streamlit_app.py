@@ -1,9 +1,16 @@
+import asyncio
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
 import streamlit as st
 import validators
 
+from browserchatgpt.web_cache import WebCache
 from browserchatgpt.web_llm import WebLLM
 from browserchatgpt.web_scraper_concurrent import WebScraperConcurrent
 from browserchatgpt.web_vector_store import WebVectorStore
+
+print("RUNNING STREAMLIT FILE")
 
 
 def save_pages_to_txt(pages):
@@ -16,21 +23,55 @@ def save_pages_to_txt(pages):
             file.write(page["text"])
 
 
+num_threads = 3
+max_links = 6
+database_name = "test_web_llm"
+vs_lock = threading.Lock()
+
+"""
+def scrape(url):
+    with ThreadPoolExecutor() as executor:
+        print(f"Thread {threading.current_thread()} running scrape")
+        scraper = st.session_state.global_data["scraper"]
+        result = asyncio.run(executor.submit(scraper.scrape(url)))
+        st.write(result)
+"""
+
+
+async def scrape(url):
+    scraper = st.session_state.global_data["scraper"]
+    await scraper.scrape(url)
+
+
+def async_scrape(url):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    loop.run_until_complete(scrape(url))
+    loop.close()
+
+
+def start_async_scrape(url):
+    print("Creating scrape thread")
+    _thread = threading.Thread(target=async_scrape, args=(url,))
+    _thread.start()
+
+
 @st.cache_resource
-def get_llm(url):
-    print("Creating web scraper")
-    web_scraper = WebScraperConcurrent(max_links=3, threads=3)
+def initialize():
+    print("Initializing all resources")
+    pages = [{"url": "NA", "text": "Empty"}]
+    vector_store = WebVectorStore(pages, vs_lock)
+    cache = WebCache(database_name, num_threads)
+    scraper = WebScraperConcurrent(
+        cache, vector_store, vs_lock, max_links=max_links, threads=num_threads
+    )
+    llm = WebLLM(vector_store)
 
-    print(f"Scraping {url}")
-    pages = web_scraper.scrape(url)
-
-    save_pages_to_txt(pages)
-
-    print("Storing data is vector store")
-    web_data = WebVectorStore(pages)
-
-    print("Creating RetrievalQALLM")
-    llm = WebLLM(web_data)
+    st.session_state.global_data["vector_store"] = vector_store
+    st.session_state.global_data["cache"] = cache
+    st.session_state.global_data["scraper"] = scraper
+    st.session_state.global_data["llm"] = llm
 
     return llm
 
@@ -49,14 +90,14 @@ form = st.form(key="my_form")
 url = form.text_input(label="Enter website you'd like to chat with")
 submit = form.form_submit_button(label="Submit")
 
+initialize()
+
 if submit:
     print("Submit - checking url")
     valid_url = validators.url(url)
     if valid_url:
         try:
-            print("Trying to load QA model.")
-            llm = get_llm(url)
-            st.session_state.global_data["llm"] = llm
+            start_async_scrape(url)
             st.caption("Now chatting with {}".format(url))
             st.session_state.messages = []
         except Exception as e:
@@ -89,6 +130,4 @@ if prompt := st.chat_input("How can I assist you?"):
             full_response = "You must enter a valid URL to begin chatting."
 
         message_placeholder.markdown(full_response)
-    st.session_state.messages.append(
-        {"role": "assistant", "content": full_response}
-    )
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
