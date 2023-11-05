@@ -6,8 +6,6 @@ from langchain.vectorstores import FAISS, Chroma
 
 class WebVectorStore:
     def __init__(self, pages, lock):
-        print("Splitting data.")
-
         self.lock = lock
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=200, chunk_overlap=0)
         self.embeddings = OpenAIEmbeddings()
@@ -19,12 +17,13 @@ class WebVectorStore:
             metadatas.extend([{"source": page['url']}] * len(splits))
 
         self.lock.acquire()
-        print("acquire")
+        #print("acquire")
         self.vector_store = FAISS.from_texts(docs, self.embeddings, metadatas=metadatas)
-        print("release")
+        #print("release")
         self.lock.release()
 
-        print("Successful vector database storage.")
+        #print("Successful vector database storage.")
+        print("Initialized vector store.")
 
     def add_pages(self, pages):
         docs, metadatas = [], []
@@ -41,7 +40,7 @@ class WebVectorStore:
         self.vector_store.add_embeddings(zip(docs, embeddings), metadatas=metadatas)
         self.lock.release()
 
-        print("Successful addition to vector database storage.")
+        #print("Successful addition to vector database storage.")
 
 
 if __name__ == "__main__":
