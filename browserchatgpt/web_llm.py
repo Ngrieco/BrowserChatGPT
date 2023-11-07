@@ -1,40 +1,39 @@
-from langchain.chains import (ConversationalRetrievalChain, RetrievalQA,
-                              RetrievalQAWithSourcesChain,
-                              VectorDBQAWithSourcesChain)
+from langchain.chains import (ConversationalRetrievalChain,
+                              RetrievalQAWithSourcesChain)
 from langchain.llms import OpenAI
-from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 
 
 class WebLLM:
-    def __init__(self, web_data):
-        vector_store = web_data.vector_store
+    def __init__(self, web_vector_store):
+        vector_store = web_vector_store.faiss
         memory = ConversationBufferMemory(
             memory_key="chat_history", return_messages=True
         )
 
-        #self.qa = RetrievalQAWithSourcesChain.from_llm(llm=OpenAI(temperature=0),
-        #                                               vectorstore=vector_store,
-        #                                               memory=memory)
+        llm = OpenAI(temperature=0.2)
+        # llm = OpenAI(temperature=0, model_name="gpt-3.5-instruct")
 
-        llm = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo')
-        #llm = OpenAI(model="gpt-3.5-turbo-instruct", temperature=0)
-        self.qa = RetrievalQAWithSourcesChain.from_llm(llm=llm,
-                                                       retriever=vector_store.as_retriever(search_kwargs={"k": 5}))
-
-        #self.qa = ConversationalRetrievalChain.from_llm(
-        #    llm=OpenAI(model="gpt-3.5-turbo-instruct", temperature=0),
+        self.qa = RetrievalQAWithSourcesChain.from_llm(
+            llm=llm, retriever=vector_store.as_retriever(search_kwargs={"k": 5})
+        )
+        # self.qa = ConversationalRetrievalChain.from_llm(
+        #    llm=llm,
         #    retriever=vector_store.as_retriever(search_kwargs={"k": 5}),
         #    memory=memory,
-        #)
+        # )
 
     def query(self, query):
         result = self.qa({"question": query})
 
+        # used for retrievalwithsources
         answer, sources = result["answer"], result["sources"]
-        response = "".join((answer, sources))
 
-        #response = result["answer"]
+        sources_list = [source.strip() for source in sources.split(",")]
+        print(f"Response sources {sources_list}")
+        response = "".join((answer, sources_list[0]))
+
+        # response = result["answer"]
 
         return response
 
