@@ -1,9 +1,8 @@
 import sys
 import threading
-import time
 
 from PyQt5.QtWidgets import (QApplication, QLabel, QLineEdit, QListWidget,
-                             QMainWindow, QPushButton, QVBoxLayout, QWidget)
+                             QMainWindow, QVBoxLayout, QWidget)
 
 from browserchatgpt.web_cache import WebCache
 from browserchatgpt.web_llm import WebLLM
@@ -17,7 +16,7 @@ class MyWindow(QMainWindow):
         super().__init__()
 
         num_threads = 3
-        max_links = 20
+        max_links = 50
         database_name = "test_web_llm"
         pages = [{"url": "NA", "text": "Empty"}]
         vs_lock = threading.Lock()
@@ -29,7 +28,7 @@ class MyWindow(QMainWindow):
             self.vector_store,
             vs_lock,
             max_links=max_links,
-            threads=num_threads,
+            num_threads=num_threads,
         )
 
         self.setWindowTitle("BrowserChatGPT")
@@ -73,6 +72,7 @@ class MyWindow(QMainWindow):
     def submit_url(self):
         requested_url = self.url_text_input.text()
         self.url_text_input.clear()
+        self.chat_history.clear()
 
         self.chat_history.addItems(
             [f"AI: Hello, you are now chatting with {requested_url}"]

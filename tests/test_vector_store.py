@@ -1,6 +1,4 @@
-from browserchatgpt.web_cache import WebCache
 from browserchatgpt.web_llm import WebLLM
-from browserchatgpt.web_scraper_concurrent import WebScraperConcurrent
 from browserchatgpt.web_vector_store import WebVectorStore
 
 pages = [{"url": "name", "text": "My name is Nick"}]

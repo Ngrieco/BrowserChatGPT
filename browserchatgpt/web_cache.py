@@ -40,27 +40,22 @@ class WebCache:
 
         current_time_str = datetime.now().strftime(self.datetime_format)
 
-        # print("add_page acquire")
         self.cursor_edit_lock.acquire()
         if not self.is_page_cached(url, connection, lock=False) or self.is_page_stale(
             url, connection, lock=False
         ):
-            # print(f"Caching {url}")
-
             if self.is_page_stale(url, connection, lock=False):
-                # print("Deleting stale page")
                 self.delete_page(url, connection)
 
             cursor.execute(
-                "INSERT INTO pages (url, timestamp, subpage_urls, text) VALUES (?, ?, ?, ?)",
+                "INSERT INTO pages (url, timestamp, subpage_urls, text)\
+                 VALUES (?, ?, ?, ?)",
                 (url, current_time_str, subpage_urls_str, text),
             )
             conn.commit()
         else:
             pass
-            # print(f"{url} is already cached.")
 
-        # print("add_page release")
         self.cursor_edit_lock.release()
 
     def get_page(self, url, connection):
@@ -100,11 +95,9 @@ class WebCache:
         _, cursor = connection
 
         if lock:
-            # print("is_page_cached acquire")
             self.cursor_edit_lock.acquire()
             cursor.execute("SELECT url FROM pages WHERE url=?", (url,))
             result = cursor.fetchone()
-            # print("is_page_cached release")
             self.cursor_edit_lock.release()
         else:
             cursor.execute("SELECT url FROM pages WHERE url=?", (url,))
@@ -117,11 +110,9 @@ class WebCache:
 
         if self.is_page_cached(url, connection, lock=False):
             if lock:
-                # print("is_page_stale acquire")
                 self.cursor_edit_lock.acquire()
                 cursor.execute("SELECT url, timestamp FROM pages WHERE url=?", (url,))
                 result = cursor.fetchone()
-                # print("is_page_stale release")
                 self.cursor_edit_lock.release()
             else:
                 cursor.execute("SELECT url, timestamp FROM pages WHERE url=?", (url,))
@@ -145,40 +136,15 @@ class WebCache:
 
         return stale
 
-    def is_space_for_page(self, text):
-        encoded_string = text.encode("utf-8")
-        size_in_bytes = len(encoded_string)
-        print(f"Trying to add string of size {size_in_bytes}")
+    def is_space_for_page(self, page):
+        pass
 
     def delete_excessive_storage(self):
-        current_db_size = self.get_db_size()
-
-        if current_db_size > MAX_SIZE_BYTES:
-            print("Deleting excess")
-            # Determine how many bytes to free up
-            bytes_to_free_up = current_db_size - MAX_SIZE_BYTES
-
-            # Sort entries by timestamp (replace 'timestamp' with your timestamp column name)
-            self.cursor.execute("SELECT url, LENGTH(text) FROM pages ORDER BY timestamp")
-            entries_to_delete = self.cursor.fetchall()
-            freed_bytes = 0
-
-            # Delete the oldest entries to free up space
-            for entry in entries_to_delete:
-                url_to_delete, text_length = entry[0], entry[1]
-                bytes_freed = text_length
-                self.cursor.execute("DELETE FROM pages WHERE url=?", (url_to_delete,))
-                freed_bytes += bytes_freed
-                print(f"Bytes freed {freed_bytes}")
-                if freed_bytes >= bytes_to_free_up:
-                    break
-
-            # Commit the changes
-            self.conn.commit()
+        pass
 
 
 if __name__ == "__main__":
-    web_cache_database = WebCache("test")
+    web_cache_database = WebCache("test_cache")
     connection = web_cache_database.get_connection()
 
     num_entries = 10

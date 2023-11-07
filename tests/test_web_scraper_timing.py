@@ -52,7 +52,8 @@ def main():
     print("# Visited urls ", len(web_scraper.visited_urls))
     file_path = "visited_pages.txt"
     with open(file_path, "w") as file:
-        sorted_urls = sorted(web_scraper.visited_urls, key = lambda x: (count_forward_slashes(x), len(x)))
+        sorted_urls = sorted(web_scraper.visited_urls,
+                        key = lambda x: (count_forward_slashes(x), len(x)))
         for url in sorted_urls:
             file.write(url + "\n")
     """
