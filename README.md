@@ -57,7 +57,7 @@ Before you begin, ensure you have met the following requirements:
     cd BrowserChatGPT/
     ```
 
-4. Set up your virtual environment:
+4. Set up your virtual environment and set your OpenAI API Key:
 
     ``` bash
     virtualenv llmenv -p $(which python3.9)
