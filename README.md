@@ -62,7 +62,7 @@ Before you begin, ensure you have met the following requirements:
     ``` bash
     virtualenv llmenv -p $(which python3.9)
     source llenv/bin/activate
-    pip install -e .
+    pip install .
     export OPENAI_API_KEY="YOUR_API_KEY_HERE"
     ```
 
