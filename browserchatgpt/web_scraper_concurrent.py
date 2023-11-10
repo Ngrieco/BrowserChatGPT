@@ -132,6 +132,7 @@ class WebScraperConcurrent:
                 url = self.unvisited_urls.pop(0)
                 self.unvisited_lock.release()
 
+
             if url not in self.visited_urls and not has_duplicate_https(url):
                 valid_url = validators.url(url)
                 if not valid_url:
@@ -140,9 +141,9 @@ class WebScraperConcurrent:
                 self.visited_urls.add(url)
 
                 cache_connection = self.cache_connections[thread_id]
-                text, subpage_urls = self.web_cache.get_page(url, cache_connection)
+                embedding, subpage_urls = self.web_cache.get_page(url, cache_connection)
 
-                if not text:
+                if not embedding:
                     print(f"Thread {thread_name} scraping {url}.")
                     cache = True
                     try:
@@ -152,10 +153,11 @@ class WebScraperConcurrent:
                         pass
                 else:
                     cache = False
+                    text = False
                     print(f"Thread {thread_name} found {url} in cache.")
 
                 self.store_results(
-                    url, text, subpage_urls, cache_connection, cache=cache
+                    url, text, embedding, subpage_urls, cache_connection, cache=cache
                 )
 
                 if first_page:
@@ -182,17 +184,23 @@ class WebScraperConcurrent:
 
         return text, subpage_urls
 
-    def store_results(self, url, text, subpage_urls, cache_connection, cache):
+    def store_results(self, url, text, embedding, subpage_urls, cache_connection, cache):
         thread_name = threading.current_thread().name
         thread_id = int(thread_name.split("_")[-1])
         subpage_urls_str = ";".join(subpage_urls)
 
-        pages = [{"url": url, "text": text}]
-        self.vector_store.add_pages(pages)
+        if(text):
+            pages = [{"url": url, "text": text}]
+            embedding = self.vector_store.add_pages(pages)
+        else:
+            pages = [{"url": url, "embedding": embedding}]
+            self.vector_store.add_pages(pages)
+
+        
 
         if cache:
             cache_connection = self.cache_connections[thread_id]
-            self.web_cache.add_page(url, text, subpage_urls_str, cache_connection)
+            self.web_cache.add_page(url, embedding, subpage_urls_str, cache_connection)
 
         self.unvisited_lock.acquire()
         for subpage_url in subpage_urls:

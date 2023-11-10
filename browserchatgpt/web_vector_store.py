@@ -52,6 +52,8 @@ class WebVectorStore:
             )
             self.lock.release()
 
+        return embeddings
+
     def reset(self):
         if len(self.vector_ids) > 0:
             self.faiss.delete(self.vector_ids)
