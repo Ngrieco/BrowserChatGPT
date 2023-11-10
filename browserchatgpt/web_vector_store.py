@@ -11,6 +11,7 @@ class WebVectorStore:
         )
         self.embeddings = OpenAIEmbeddings()
         self.vector_ids = []
+        self.num_tot_ids = 0
 
         docs, metadatas = [], []
         for page in pages:
@@ -21,6 +22,7 @@ class WebVectorStore:
         # Create unique ideas for initial data
         doc_ids = [str(i) for i in range(len(docs))]
         self.vector_ids.extend(doc_ids)
+        self.num_tot_ids += len(doc_ids)
 
         self.lock.acquire()
         self.faiss = FAISS.from_texts(
@@ -37,10 +39,11 @@ class WebVectorStore:
 
         # Create unique ids for new data
         self.lock.acquire()
-        num_curr_ids = len(self.vector_ids)
+        num_tot_ids = self.num_tot_ids
         num_new_ids = len(docs)
-        doc_ids = [str(i) for i in range(num_curr_ids, num_curr_ids + num_new_ids)]
+        doc_ids = [str(i) for i in range(num_tot_ids, num_tot_ids + num_new_ids)]
         self.vector_ids.extend(doc_ids)
+        self.num_tot_ids += len(doc_ids)
         self.lock.release()
 
         embeddings = self.embeddings.embed_documents(docs)
@@ -51,8 +54,6 @@ class WebVectorStore:
                 zip(docs, embeddings), metadatas=metadatas, ids=doc_ids
             )
             self.lock.release()
-
-        return embeddings
 
     def reset(self):
         if len(self.vector_ids) > 0:

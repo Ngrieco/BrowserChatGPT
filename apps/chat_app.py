@@ -16,7 +16,7 @@ class MyWindow(QMainWindow):
         super().__init__()
 
         num_threads = 3
-        max_links = 50
+        max_links = 100
         database_name = "test_web_llm"
         pages = [{"url": "NA", "text": "Empty"}]
         vs_lock = threading.Lock()
