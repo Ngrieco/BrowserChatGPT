@@ -35,7 +35,7 @@ The BrowserChatGPT app is comprised of the following components:
 Before you begin, ensure you have met the following requirements:
 
 - You have [Python 3.9+](https://www.python.org/) installed.
-- You have Google Chrome (https://www.google.com/chrome/)installed.
+- You have [Google Chrome](https://www.google.com/chrome/) installed.
 - You have created an [OpenAI API Key](https://gptforwork.com/help/gpt-for-docs/setup/create-openai-api-key).
 
 ### Installation
