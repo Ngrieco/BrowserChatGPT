@@ -18,7 +18,7 @@ cache = WebCache(database_name, num_threads)
 llm = WebLLM(vector_store)
 
 scraper = WebScraperConcurrent(
-    cache, vector_store, vs_lock, max_links=max_links, threads=num_threads
+    cache, vector_store, vs_lock, max_links=max_links, num_threads=num_threads
 )
 
 
