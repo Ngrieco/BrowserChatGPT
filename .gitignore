@@ -1,3 +1,5 @@
+.flake8
+.python-version
 *.ipynb
 __*
 *.egg-info
