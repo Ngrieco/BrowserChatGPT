@@ -75,7 +75,7 @@ Before you begin, ensure you have met the following requirements:
 
 6. At this point, you should see a GUI open prompting you to input a website for which you want some help on! Enjoy!
 
-    ![BrowserChatGPT](images/screenshot.png)
+    ![BrowserChatGPT](images/original_gui.png)
 
 7. To deactivate your virtual environment:
    

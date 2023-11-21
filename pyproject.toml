@@ -14,7 +14,8 @@ dependencies = [
     "selenium == 4.13.0",
     "tiktoken == 0.5.1",
     "urllib3 == 2.0.6",
-    "validators"
+    "validators",
+    "wikipedia"
 ]
 
 [tool.setuptools.packages.find]
