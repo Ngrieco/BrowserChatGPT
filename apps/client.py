@@ -1,8 +1,10 @@
+import time
+
 import requests
 
 
 def send_url_to_server(url):
-    server_url = "http://127.0.0.1:5000/api/url"  # Update this URL if your server runs on a different address/port
+    server_url = "http://127.0.0.1:5000/api/url"
 
     params = {"url": url}
     response = requests.get(server_url, params=params)
@@ -17,7 +19,7 @@ def send_url_to_server(url):
 
 
 def send_query_to_server(query):
-    server_url = "http://127.0.0.1:5000/api/query"  # Update this URL if your server runs on a different address/port
+    server_url = "http://127.0.0.1:5000/api/query"
 
     params = {"query": query}
     response = requests.get(server_url, params=params)
@@ -31,8 +33,6 @@ def send_query_to_server(query):
 
     return response
 
-
-import time
 
 url = "https://www.bethanychurch.tv"
 send_url_to_server(url)

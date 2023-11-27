@@ -64,7 +64,7 @@ class WebVectorStore:
     def clear(self):
         print("Current entries ", self.vector_ids)
         num_entries = len(self.vector_ids)
-        if  num_entries > 0:
+        if num_entries > 0:
             print(f"Clearing vector store with {num_entries} entries")
             try:
                 success = self.faiss.delete(self.vector_ids[1:])
@@ -72,7 +72,7 @@ class WebVectorStore:
                     print("Successfully cleared")
                 else:
                     print("Unsuccessful clear")
-                    
+
                 self.vector_ids = []
                 self.num_tot_ids = 1
             except Exception as e:

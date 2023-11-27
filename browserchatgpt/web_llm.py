@@ -28,7 +28,7 @@ class WebLLM:
     def query(self, query):
         response = self.agent.run(query)
         return response
-    
+
     def reset_memory(self):
         self.agent.memory.clear()
         for tool in self.llm_tools:

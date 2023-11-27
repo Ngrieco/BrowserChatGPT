@@ -74,7 +74,6 @@ class WebScraperConcurrent:
         return threads
 
     def scrape(self, starting_url):
-
         if starting_url[-1] != "/":
             starting_url = starting_url + "/"
 
@@ -83,16 +82,16 @@ class WebScraperConcurrent:
             starting_url = f"https://{starting_url}"
 
         # Resetting for scraping new website
-        if(starting_url != self.current_url):
+        if starting_url != self.current_url:
             print(f"scrape new url {self.current_url} -> {starting_url}")
             self.current_url = starting_url
             self.visited_urls = set()
             self.unvisited_urls = []
             self.vector_store.clear()
-            #self.vector_store.reset()
+            # self.vector_store.reset()
 
         print(f"Adding {starting_url} to the scrape queue.")
-        
+
         # By only adding the starting url, if we were previously
         # scraping another website and changed sites, we remove
         # all previous URLs from the queue.
@@ -103,16 +102,16 @@ class WebScraperConcurrent:
         if not self.running_threads:
             # Only start the threads one
             self.running_threads = 1
-            #print("Thread 0")
+            # print("Thread 0")
             self.threads[0].start()
             self.threads[0].join()
 
             for i in range(1, self.num_threads + 1):
-                #print(f"Starting thread {i}")
+                # print(f"Starting thread {i}")
                 self.threads[i].start()
 
             for i in range(1, self.num_threads + 1):
-                #print(f"Joining thread {i}")
+                # print(f"Joining thread {i}")
                 self.threads[i].join()
 
         return
