@@ -13,6 +13,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     }
   });
   
+
+  chrome.contextMenus.removeAll(); // Remove existing context menu items
+
   chrome.contextMenus.create({
     title: "My Context Menu Item",
     id: "myContextMenu",
@@ -27,3 +30,19 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     }
   });
   
+  chrome.action.onClicked.addListener((tab) => {
+    console.log("Clicked")
+    chrome.windows.create({
+      url: 'browserchatgpt.html',
+      type: 'panel',
+      width: 400,
+      height: 600
+    });
+  });
+
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'GET_LOCATION_HOST') {
+      const host = window.location.host;
+      sendResponse({ host: host });
+    }
+  });

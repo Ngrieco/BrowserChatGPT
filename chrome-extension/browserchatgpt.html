@@ -3,13 +3,41 @@
 <head>
   <title>ChatGPT Chatbot</title>
   <script src="browserchatgpt.js"></script>
+  <style>
+    /* Add your custom styles */
+    #user-input {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end; /* Align content to the bottom */
+      align-items: center; /* Center content horizontally */
+      width: 350px; /* Set your preferred width */
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    /* Style for the chat container */
+    #chat-container {
+      width: 350px; /* Set your preferred width */
+      height: 400px; /* Set your preferred height */
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 10px;
+      overflow-y: auto; /* Enable scrolling if content exceeds max height */
+    }
+
+    /* Style for the input and button */
+    input[type="text"], button {
+      margin-top: 10px; /* Space between the chat container and the input/button */
+      /* Additional styles for the input and button */
+    }
+  </style>
 </head>
 <body>
-  <h1>Welcome to BrowserChatGPT Chatbot!</h1>
+  <h1>BrowserChatGPT</h1>
   <div id="chat-container">
-    <!-- Chat messages will be displayed here -->
+    <div class="chat-message">AI: Hello! You can ask me anything about the current website.</div>
   </div>
   <input type="text" id="user-input" placeholder="Type your message">
-  <button id="send-button">Send</button>
 </body>
 </html>

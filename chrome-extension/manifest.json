@@ -3,7 +3,10 @@
     "name": "ChatGPT Chatbot Extension",
     "version": "1.0",
     "description": "A Chrome extension with a ChatGPT chatbot.",
-    "permissions": ["activeTab", "contextMenus"],
+    "permissions": ["activeTab",
+                    "tabs",
+                    "contextMenus",
+                    "storage"],
     "action": {
       "default_popup": "browserchatgpt.html",
       "default_icon": {
@@ -14,7 +17,7 @@
     "content_scripts": [
       {
         "matches": ["<all_urls>"],
-        "js": ["content.js"]
+        "js": ["browserchatgpt.js"]
       }
     ],
     "background": {

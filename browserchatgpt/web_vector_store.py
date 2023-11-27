@@ -4,8 +4,14 @@ from langchain.vectorstores import FAISS
 
 
 class WebVectorStore:
-    def __init__(self, pages, lock):
+    def __init__(self, lock, pages=None):
         self.lock = lock
+        self.reset(pages)
+
+    def reset(self, pages=None):
+        if not pages:
+            pages = [{"url": "NA", "text": "Empty"}]
+
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=200, chunk_overlap=0
         )
@@ -55,13 +61,23 @@ class WebVectorStore:
             )
             self.lock.release()
 
-    def reset(self):
-        if len(self.vector_ids) > 0:
+    def clear(self):
+        print("Current entries ", self.vector_ids)
+        num_entries = len(self.vector_ids)
+        if  num_entries > 0:
+            print(f"Clearing vector store with {num_entries} entries")
             try:
-                self.faiss.delete(self.vector_ids)
+                success = self.faiss.delete(self.vector_ids[1:])
+                if success:
+                    print("Successfully cleared")
+                else:
+                    print("Unsuccessful clear")
+                    
                 self.vector_ids = []
-            except Exception:
+                self.num_tot_ids = 1
+            except Exception as e:
                 print("Couldn't delete all vector ids.")
+                print(e)
 
 
 if __name__ == "__main__":

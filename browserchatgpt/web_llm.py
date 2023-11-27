@@ -11,24 +11,28 @@ class WebLLM:
     def __init__(self, web_vector_store):
         vector_store = web_vector_store.faiss
 
-        llm = OpenAI(temperature=0.2)
-        memory = ConversationBufferMemory(
+        self.llm = OpenAI(temperature=0.2)
+        self.memory = ConversationBufferMemory(
             memory_key="chat_history", return_messages=True
         )
-
-        llm_tools = get_agent_tools(llm, vector_store, memory)
+        self.llm_tools = get_agent_tools(self.llm, vector_store, self.memory)
 
         self.agent = initialize_agent(
-            llm_tools,
-            llm,
+            self.llm_tools,
+            self.llm,
             agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
-            memory=memory,
+            memory=self.memory,
             verbose=True,
         )
 
     def query(self, query):
         response = self.agent.run(query)
         return response
+    
+    def reset_memory(self):
+        self.agent.memory.clear()
+        for tool in self.llm_tools:
+            print("Tool type", type(tool))
 
 
 def get_agent_tools(llm, vector_store, memory):

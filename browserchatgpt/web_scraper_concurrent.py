@@ -29,6 +29,7 @@ class WebScraperConcurrent:
         self.vector_store = vector_store
         self.vector_lock = vector_lock
 
+        self.current_url = None
         self.visited_urls = set()
         self.unvisited_urls = []
         self.unvisited_lock = threading.Lock()
@@ -73,13 +74,25 @@ class WebScraperConcurrent:
         return threads
 
     def scrape(self, starting_url):
-        # Reset vector store for new website
-        self.vector_store.reset()
 
-        print(f"Adding {starting_url} to the scrape queue.")
         if starting_url[-1] != "/":
             starting_url = starting_url + "/"
 
+        if not starting_url.startswith("https://"):
+            # If "https://" is missing, add it
+            starting_url = f"https://{starting_url}"
+
+        # Resetting for scraping new website
+        if(starting_url != self.current_url):
+            print(f"scrape new url {self.current_url} -> {starting_url}")
+            self.current_url = starting_url
+            self.visited_urls = set()
+            self.unvisited_urls = []
+            self.vector_store.clear()
+            #self.vector_store.reset()
+
+        print(f"Adding {starting_url} to the scrape queue.")
+        
         # By only adding the starting url, if we were previously
         # scraping another website and changed sites, we remove
         # all previous URLs from the queue.
@@ -90,16 +103,16 @@ class WebScraperConcurrent:
         if not self.running_threads:
             # Only start the threads one
             self.running_threads = 1
-            print("Thread 0")
+            #print("Thread 0")
             self.threads[0].start()
             self.threads[0].join()
 
             for i in range(1, self.num_threads + 1):
-                print(f"Starting thread {i}")
+                #print(f"Starting thread {i}")
                 self.threads[i].start()
 
             for i in range(1, self.num_threads + 1):
-                print(f"Joining thread {i}")
+                #print(f"Joining thread {i}")
                 self.threads[i].join()
 
         return
@@ -118,13 +131,13 @@ class WebScraperConcurrent:
 
         while True:
             if len(self.visited_urls) >= self.max_links:
-                print("Reached max URLS.")
+                print("SCRAPING TERMINATED - MAX LINKS LIMIT REACHED.")
                 break
 
             self.unvisited_lock.acquire()
             if len(self.unvisited_urls) == 0:
                 # if nothing to scrape, sleep and check later
-                print(f"Thread {thread_name} sleeping.")
+                # print(f"Thread {thread_name} sleeping.")
                 self.unvisited_lock.release()
                 time.sleep(2)
                 continue
@@ -201,6 +214,7 @@ class WebScraperConcurrent:
                 and subpage_url not in self.unvisited_urls
             ):
                 self.unvisited_urls.append(subpage_url)
+
         self.unvisited_urls = sorted(self.unvisited_urls, key=count_forward_slashes)
         self.unvisited_lock.release()
 
