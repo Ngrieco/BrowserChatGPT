@@ -7,6 +7,7 @@ browserchatgpt = BrowserChatGPT()
 
 
 @app.route("/api/url", methods=["GET"])
+# @app.route("/api/url", methods=["PUT"])
 def url_endpoint():
     url = request.args.get("url")
 

@@ -11,7 +11,7 @@ from browserchatgpt.web_vector_store import WebVectorStore
 
 class BrowserChatGPT:
     def __init__(self):
-        num_threads = 1
+        num_threads = 3
         max_links = 100
         database_name = "test_web_llm"
         vs_lock = threading.Lock()
