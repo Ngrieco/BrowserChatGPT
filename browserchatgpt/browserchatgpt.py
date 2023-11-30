@@ -10,7 +10,7 @@ from browserchatgpt.web_vector_store import WebVectorStore
 
 
 class BrowserChatGPT:
-    def __init__(self):
+    def __init__(self, use_robot_txt=True):
         num_threads = 3
         max_links = 100
         database_name = "test_web_llm"
@@ -28,10 +28,15 @@ class BrowserChatGPT:
         self.scraper_thread = None
         self.llm_thread = None
         self.current_url = None
+        self.use_robot_txt = use_robot_txt
 
     def submit_url(self, requested_url):
         self.scraper_thread = threading.Thread(
-            target=self.query_scraper, args=(requested_url,)
+            target=self.query_scraper,
+            args=(
+                requested_url,
+                self.use_robot_txt,
+            ),
         )
         self.scraper_thread.start()
 
@@ -47,12 +52,12 @@ class BrowserChatGPT:
 
         return href_result
 
-    def query_scraper(self, url):
+    def query_scraper(self, url, use_robot_txt):
         if url != self.current_url:
             self.llm.reset_memory()
             self.current_url = url
 
-        self.scraper.scrape(url)
+        self.scraper.scrape(url, use_robot_txt)
 
 
 def add_hyperlinks(sent):

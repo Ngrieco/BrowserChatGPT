@@ -1,8 +1,10 @@
 import threading
 import time
+from urllib import robotparser
 from urllib.parse import urlparse
 
 import html2text
+import requests
 import validators
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -33,6 +35,9 @@ class WebScraperConcurrent:
         self.visited_urls = set()
         self.unvisited_urls = []
         self.unvisited_lock = threading.Lock()
+
+        self.robot_txt = None
+        self.robot_txt_exists = False
 
         driver_options = webdriver.ChromeOptions()
         driver_options.headless = True
@@ -73,7 +78,9 @@ class WebScraperConcurrent:
 
         return threads
 
-    def scrape(self, starting_url):
+    def scrape(self, starting_url, use_robot_txt):
+        self.use_robot_txt = use_robot_txt
+
         if starting_url[-1] != "/":
             starting_url = starting_url + "/"
 
@@ -84,6 +91,10 @@ class WebScraperConcurrent:
         # Resetting for scraping new website
         if starting_url != self.current_url:
             print(f"scrape new url {self.current_url} -> {starting_url}")
+
+            if self.use_robot_txt:
+                self.get_robot_txt(starting_url)
+
             self.current_url = starting_url
             self.visited_urls = set()
             self.unvisited_urls = []
@@ -116,6 +127,21 @@ class WebScraperConcurrent:
 
         return
 
+    def get_robot_txt(self, url):
+        robots_url = f"{url}/robots.txt"
+        response = requests.get(robots_url)
+        if response.status_code == 200:  # Check if the file exists
+            print("ROBOT_TXT EXISTS!!!")
+            rp = robotparser.RobotFileParser()
+            rp.set_url(robots_url)
+            rp.read()
+            self.robot_txt = rp
+            self.robot_txt_exists = True
+        else:
+            print("ROBOT_TXT DOESN'T EXIST!!!")
+            self.robot_txt = None
+            self.robot_txt_exists = False
+
     def concurrent_scrape_data(self, first_page=False, driver=None, cache_pool=None):
         """Scrapes data from website and subpages."""
         if driver is None:
@@ -143,6 +169,12 @@ class WebScraperConcurrent:
             else:
                 url = self.unvisited_urls.pop(0)
                 self.unvisited_lock.release()
+
+            if self.use_robot_txt and self.robot_txt_exists:
+                is_blocked = self.robot_txt.can_fetch("browserchatgpt", url)
+                if is_blocked:
+                    print(f"Thread {thread_name} skipping {url} b/c robots_txt")
+                    continue
 
             if url not in self.visited_urls and not has_duplicate_https(url):
                 valid_url = validators.url(url)

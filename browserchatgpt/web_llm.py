@@ -38,8 +38,6 @@ class WebLLM:
 
     def reset_memory(self):
         self.agent_executer.memory.clear()
-        for tool in self.llm_tools:
-            print("Tool type", type(tool))
 
 
 def get_agent_tools(llm, vector_store, memory):
