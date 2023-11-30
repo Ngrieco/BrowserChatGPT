@@ -38,67 +38,45 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
   function addMessageToGUI(message, isUser) {
-    // const messageElement = document.createElement('div');
-    //messageElement.classList.add(isUser ? 'user-message' : 'ai-message');
+    const messageElement = document.createElement('div');
+    messageElement.classList.add(isUser ? 'user-message' : 'ai-message');
     if(isUser){
       message = "User: " + message
     } else {
       message = "AI: " + message
     }
 
-    // Regular expression to match URLs in the message
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const messageWithLinks = message.replace(urlRegex, '<a href="$1">$1</a>');
-    //console.log(messageWithLinks)
-
-    messageElement = parseString(messageWithLinks)
-    chatContainer.appendChild(messageElement);
-
-    /*
-    // messageElement.innerText = message;
-    messageElement.innerText = messageWithLinks;
-
-    // Create the anchor element
-    const link = document.createElement('a');
-    link.setAttribute('href', 'https://www.example.com');
-    link.innerText = 'https://www.example.com';
-
-    chatContainer.appendChild(messageElement);
-    // chatContainer.appendChild(link);
-    */
+    const messageWithLinks = parseStringIntoElements(message)
+    chatContainer.appendChild(messageWithLinks);
   };
 
 
-  function parseString(inputString) {
-    let messageElement = document.createElement('div');
-    let linkArray = inputString.split(',').map(link => link.trim());
-  
-    linkArray.forEach(linkStr => {
-      let tempDiv = document.createElement('div');
-      tempDiv.innerHTML = linkStr;
-  
-      let nodes = tempDiv.childNodes;
-  
-      nodes.forEach(node => {
-        if (node.nodeName === "#text") {
-          messageElement.appendChild(document.createTextNode(node.nodeValue));
-        } else if (node.nodeName === "A") {
-          let link = document.createElement('a');
-          link.setAttribute('href', node.getAttribute('href'));
-          link.innerText = node.innerText;
-          messageElement.appendChild(link);
+  function parseStringIntoElements(string) {
+    const container = document.createElement('div');
+    const segments = string.split(/(https?:\/\/[^\s,]+)/); 
+
+    segments.forEach(segment => {
+      if (segment.startsWith('http')) {
+        const link = document.createElement('a');
+        
+        if (segment.endsWith('.')) {
+          segment = segment.slice(0, -1); // Remove the last character (period)
         }
-      });
+
+        link.href = segment.trim(); // Trim to remove any leading/trailing whitespace
+        link.textContent = segment.trim();
+        link.target = "_blank";
   
-      messageElement.appendChild(document.createTextNode(', ')); // Add a comma and space between links
+        container.appendChild(link); // Append link directly to the container
+      } else {
+        const span = document.createElement('span');
+        span.textContent = segment;
+  
+        container.appendChild(span); // Append segment directly to the container
+      }
     });
-  
-    // Remove the last comma and space if added
-    if (messageElement.lastChild) {
-      messageElement.removeChild(messageElement.lastChild);
-    }
-  
-    return messageElement;
+
+    return container;
   }
 
 

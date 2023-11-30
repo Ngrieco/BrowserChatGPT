@@ -48,9 +48,8 @@ class BrowserChatGPT:
 
     def query_llm(self, query):
         result = self.llm.query(query)
-        href_result = add_hyperlinks(result)
-
-        return href_result
+        
+        return result
 
     def query_scraper(self, url, use_robot_txt):
         if url != self.current_url:
