@@ -13,7 +13,7 @@ class WebVectorStore:
             pages = [{"url": "NA", "text": "Empty"}]
 
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=200, chunk_overlap=0
+            chunk_size=300, chunk_overlap=50
         )
         self.embeddings = OpenAIEmbeddings()
         self.vector_ids = []
@@ -73,7 +73,7 @@ class WebVectorStore:
                 else:
                     print("Unsuccessful clear")
 
-                self.vector_ids = []
+                self.vector_ids = ["0"]
                 self.num_tot_ids = 1
             except Exception as e:
                 print("Couldn't delete all vector ids.")

@@ -155,9 +155,9 @@ class WebScraperConcurrent:
             self.cache_connections[thread_id] = cache_connection
 
         while True:
-            if len(self.visited_urls) >= self.max_links:
-                print("SCRAPING TERMINATED - MAX LINKS LIMIT REACHED.")
-                break
+            # if len(self.visited_urls) >= self.max_links:
+            #    print("SCRAPING TERMINATED - MAX LINKS LIMIT REACHED.")
+            #    break
 
             self.unvisited_lock.acquire()
             if len(self.unvisited_urls) == 0:

@@ -1,11 +1,11 @@
 # Database cache of web data from most recently visited urls
-import os
+
 import sqlite3
 import threading
 from datetime import datetime
 
 CACHE_REFRESH_TIME_SECONDS = 60
-MAX_SIZE_BYTES = 8192  # 1000000 ~ 1MB
+MAX_SIZE_GB = 1
 MAX_URLS = 50
 
 
@@ -15,7 +15,7 @@ class WebCache:
         self.database_path = f"{database_name}.db"
         self.datetime_format = "%Y-%m-%d %H:%M:%S"
 
-        self.local_conn = sqlite3.connect(f"{database_name}.db")
+        self.local_conn = sqlite3.connect(f"{database_name}.db", isolation_level=None)
         self.local_cursor = self.local_conn.cursor()
         self.local_cursor.execute(
             """
@@ -27,20 +27,23 @@ class WebCache:
             )
         """
         )
+        self.local_cursor.execute("PRAGMA auto_vacuum = 1;")
 
         self.cursor_edit_lock = threading.Lock()
 
     def get_connection(self):
-        conn = sqlite3.connect(f"{self.database_name}.db")
+        conn = sqlite3.connect(f"{self.database_name}.db", isolation_level=None)
         cursor = conn.cursor()
         return (conn, cursor)
 
     def add_page(self, url, text, subpage_urls_str, connection):
         conn, cursor = connection
 
+        self.cursor_edit_lock.acquire()
+        self.delete_excessive_storage(connection)
+
         current_time_str = datetime.now().strftime(self.datetime_format)
 
-        self.cursor_edit_lock.acquire()
         if not self.is_page_cached(url, connection, lock=False) or self.is_page_stale(
             url, connection, lock=False
         ):
@@ -53,8 +56,11 @@ class WebCache:
                 (url, current_time_str, subpage_urls_str, text),
             )
             conn.commit()
+
         else:
             pass
+
+        self.delete_excessive_storage(connection)
 
         self.cursor_edit_lock.release()
 
@@ -81,13 +87,6 @@ class WebCache:
     def delete_page(self, url, connection):
         _, cursor = connection
         cursor.execute("DELETE FROM pages WHERE url=?", (url,))
-
-    def get_db_size(self):
-        file_size = os.path.getsize(self.database_path)
-        if file_size > MAX_SIZE_BYTES:
-            print(f"Database size {file_size} exceeds limit {MAX_SIZE_BYTES}.")
-
-        return file_size
 
     def is_page_cached(self, url, connection, lock=True):
         """lock should only be set to true when running the function
@@ -136,11 +135,41 @@ class WebCache:
 
         return stale
 
-    def is_space_for_page(self, page):
-        pass
+    def get_size_mb(self, connection):
+        # Execute query to fetch page size and page count
+        _, cursor = connection
+        cursor.execute("PRAGMA page_size")
+        page_size = cursor.fetchone()[0]
 
-    def delete_excessive_storage(self):
-        pass
+        cursor.execute("PRAGMA page_count")
+        page_count = cursor.fetchone()[0]
+
+        # Calculate database size in bytes and convert to megabytes
+        database_size_kb = (page_size * page_count) / (1024 * 1024)
+        print(f"SQLite database size: {database_size_kb:.2f} MB")
+
+        return database_size_kb
+
+    def delete_excessive_storage(self, connection):
+        conn, cursor = connection
+        while self.get_size_mb(connection) > MAX_SIZE_GB:
+            cursor.execute("SELECT url FROM pages ORDER BY timestamp LIMIT 1;")
+            oldest_entry = cursor.fetchone()
+            print("Oldest entry ", oldest_entry)
+
+            # If an oldest entry exists, delete it
+            if oldest_entry:
+                delete_query = f"""
+                    DELETE FROM pages
+                    WHERE url = '{oldest_entry[0]}';
+                """
+                cursor.execute(delete_query)
+                print("Oldest entry deleted successfully")
+
+                cursor.execute("VACUUM;")
+
+            # Commit the changes
+            conn.commit()
 
 
 if __name__ == "__main__":

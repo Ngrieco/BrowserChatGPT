@@ -29,7 +29,6 @@ class WebLLM:
 
         current_prompt = self.agent_executer.agent.llm_chain.prompt.template
         new_prompt = update_prompt(current_prompt)
-        print(new_prompt)
         self.agent_executer.agent.llm_chain.prompt.template = new_prompt
 
     def query(self, query):
@@ -43,13 +42,13 @@ class WebLLM:
 def get_agent_tools(llm, vector_store, memory):
     qa_conversation = ConversationalRetrievalChain.from_llm(
         llm=llm,
-        retriever=vector_store.as_retriever(search_kwargs={"k": 5}),
+        retriever=vector_store.as_retriever(search_kwargs={"k": 4}),
         memory=memory,
     )
 
     qa_sources = RetrievalQAWithSourcesChain.from_llm(
         llm=llm,
-        retriever=vector_store.as_retriever(search_kwargs={"k": 5}),
+        retriever=vector_store.as_retriever(search_kwargs={"k": 4}),
     )
 
     wikipedia = WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper())

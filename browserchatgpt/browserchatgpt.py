@@ -13,7 +13,7 @@ class BrowserChatGPT:
     def __init__(self, use_robot_txt=True):
         num_threads = 3
         max_links = 100
-        database_name = "test_web_llm"
+        database_name = "browserchatgpt"
         vs_lock = threading.Lock()
         self.vector_store = WebVectorStore(vs_lock)
         self.cache = WebCache(database_name, num_threads)

@@ -17,7 +17,7 @@ class MyWindow(QMainWindow):
 
         num_threads = 3
         max_links = 100
-        database_name = "test_web_llm"
+        database_name = "test_chat_app"
         pages = [{"url": "NA", "text": "Empty"}]
         vs_lock = threading.Lock()
         self.vector_store = WebVectorStore(pages, vs_lock)
