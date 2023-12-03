@@ -48,7 +48,7 @@ class BrowserChatGPT:
 
     def query_llm(self, query):
         result = self.llm.query(query)
-        
+
         return result
 
     def query_scraper(self, url, use_robot_txt):
@@ -57,13 +57,3 @@ class BrowserChatGPT:
             self.current_url = url
 
         self.scraper.scrape(url, use_robot_txt)
-
-
-def add_hyperlinks(sent):
-    new_sent = copy.copy(sent)
-    for token in sent.split(" "):
-        if validators.url(token):
-            href = f'<a href="{token}">{token}</a>'
-            new_sent = new_sent.replace(token, href)
-
-    return new_sent

@@ -21,15 +21,16 @@ class WebLLM:
         self.agent_executer = initialize_agent(
             self.llm_tools,
             self.llm,
-            agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
+            agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,  # Needed to return links
+            # agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION, # Too many hallucinations
             memory=self.memory,
             verbose=True,
             prompt="Hello",
         )
 
-        current_prompt = self.agent_executer.agent.llm_chain.prompt.template
-        new_prompt = update_prompt(current_prompt)
-        self.agent_executer.agent.llm_chain.prompt.template = new_prompt
+        # current_prompt = self.agent_executer.agent.llm_chain.prompt.template
+        # new_prompt = update_prompt(current_prompt)
+        # self.agent_executer.agent.llm_chain.prompt.template = new_prompt
 
     def query(self, query):
         response = self.agent_executer.run(query)
@@ -49,25 +50,24 @@ def get_agent_tools(llm, vector_store, memory):
     qa_sources = RetrievalQAWithSourcesChain.from_llm(
         llm=llm,
         retriever=vector_store.as_retriever(search_kwargs={"k": 4}),
+        memory=memory,
     )
 
     wikipedia = WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper())
 
     tools = [
         Tool(
-            name="QA Sources",
-            func=qa_sources,
-            description="Answers questions and can point "
-            "the user to the relevant information. "
-            "Can help the user find where the "
-            "answer is located.",
-        ),
-        Tool(
             name="QA Conversation",
             func=qa_conversation.run,
             return_direct=True,
-            description="Answers questions and is able to "
-            "hold a conversation as well.",
+            description="Best tool. Always use this first. Answers "
+            "questions and is able to hold a conversation as well.",
+        ),
+        Tool(
+            name="QA Sources",
+            func=qa_sources,
+            description="Answers questions whena source for "
+            "the answer is needed such as a link or url.",
         ),
         Tool(
             name="Wikipedia Query",
@@ -81,6 +81,7 @@ def get_agent_tools(llm, vector_store, memory):
 
 
 def update_prompt(prompt):
+    """Only used with AgentType.CONVERSATIONAL_REACT_DESCRIPTION."""
     sub_str = "To use a tool"
     additional_str = (
         "You must always try to use a tool when responding "

@@ -32,21 +32,5 @@ def query_endpoint():
     return jsonify(response)
 
 
-"""
-import logging
-logging.basicConfig(filename='error.log', level=logging.DEBUG)
-
-# Add a logging handler to capture 403 errors
-file_handler = logging.FileHandler('error.log')
-file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-app.logger.addHandler(file_handler)
-
-# Route that triggers a 403 Forbidden error
-@app.route('/forbidden')
-def trigger_forbidden():
-    app.logger.error('403 Forbidden error occurred')  # Log the 403 error
-    return "Forbidden", 403
-"""
-
 if __name__ == "__main__":
     app.run(debug=True)
