@@ -11,7 +11,7 @@ class WebLLM:
     def __init__(self, web_vector_store):
         vector_store = web_vector_store.faiss
 
-        self.llm = OpenAI(temperature=0.2)
+        self.llm = OpenAI(temperature=0)
 
         self.memory = ConversationBufferMemory(
             memory_key="chat_history", return_messages=True
@@ -21,16 +21,16 @@ class WebLLM:
         self.agent_executer = initialize_agent(
             self.llm_tools,
             self.llm,
-            agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,  # Needed to return links
-            # agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION, # Too many hallucinations
+            #agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,     # Can't converse nor return links
+            agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION, # Can converse and do links but too many hallucinations
             memory=self.memory,
             verbose=True,
-            prompt="Hello",
         )
-
-        # current_prompt = self.agent_executer.agent.llm_chain.prompt.template
-        # new_prompt = update_prompt(current_prompt)
-        # self.agent_executer.agent.llm_chain.prompt.template = new_prompt
+        
+        current_prompt = self.agent_executer.agent.llm_chain.prompt.template
+        new_prompt = update_prompt(current_prompt)
+        self.agent_executer.agent.llm_chain.prompt.template = new_prompt
+        #print(self.agent_executer.agent.llm_chain.prompt.template)
 
     def query(self, query):
         response = self.agent_executer.run(query)
@@ -49,8 +49,7 @@ def get_agent_tools(llm, vector_store, memory):
 
     qa_sources = RetrievalQAWithSourcesChain.from_llm(
         llm=llm,
-        retriever=vector_store.as_retriever(search_kwargs={"k": 4}),
-        memory=memory,
+        retriever=vector_store.as_retriever(search_kwargs={"k": 4})
     )
 
     wikipedia = WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper())
@@ -66,7 +65,7 @@ def get_agent_tools(llm, vector_store, memory):
         Tool(
             name="QA Sources",
             func=qa_sources,
-            description="Answers questions whena source for "
+            description="Answers questions when a source for "
             "the answer is needed such as a link or url.",
         ),
         Tool(
