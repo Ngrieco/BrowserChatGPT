@@ -1,45 +1,4 @@
-# from langchain.chains import (ConversationalRetrievalChain,
-#                               RetrievalQAWithSourcesChain)
-# from langchain.llms import OpenAI
-# from langchain.memory import ConversationBufferMemory
-
-
-# class WebLLM:
-#     def __init__(self, web_vector_store):
-#         vector_store = web_vector_store.faiss
-#         memory = ConversationBufferMemory(
-#             memory_key="chat_history", return_messages=True
-#         )
-
-#         llm = OpenAI(temperature=0.2)
-#         # llm = OpenAI(temperature=0, model_name="gpt-3.5-instruct")
-
-#         self.qa = RetrievalQAWithSourcesChain.from_llm(
-#             llm=llm, retriever=vector_store.as_retriever(search_kwargs={"k": 5})
-#         )
-#         # self.qa = ConversationalRetrievalChain.from_llm(
-#         #    llm=llm,
-#         #    retriever=vector_store.as_retriever(search_kwargs={"k": 5}),
-#         #    memory=memory,
-#         # )
-
-#     def query(self, query):
-#         result = self.qa({"question": query})
-
-#         # used for retrievalwithsources
-#         answer, sources = result["answer"], result["sources"]
-
-#         sources_list = [source.strip() for source in sources.split(",")]
-#         print(f"Response sources {sources_list}")
-#         response = "".join((answer, sources_list[0]))
-
-#         # response = result["answer"]
-
-#         return response
-
-
-# if __name__ == "__main__":
-#     pass
+# Import necessary modules and classes from the langchain library
 from langchain.agents import AgentType, initialize_agent
 from langchain.chains import (ConversationalRetrievalChain,
                               RetrievalQAWithSourcesChain)
@@ -48,84 +7,88 @@ from langchain.memory import ConversationBufferMemory
 from langchain.tools import Tool, WikipediaQueryRun
 from langchain.utilities import WikipediaAPIWrapper
 
-
+# Define a class called WebLLM
 class WebLLM:
     def __init__(self, web_vector_store):
+        # Initialize the WebLLM instance with a Faiss vector store
         vector_store = web_vector_store.faiss
 
+        # Initialize the OpenAI language model with a temperature of 0.2
         self.llm = OpenAI(temperature=0.2)
 
+        # Create a ConversationBufferMemory instance for storing conversation history
         self.memory = ConversationBufferMemory(
             memory_key="chat_history", return_messages=True
         )
+
+        # Get tools for the language model
         self.llm_tools = get_agent_tools(self.llm, vector_store, self.memory)
 
+        # Initialize an agent with the specified tools, language model, and memory
         self.agent_executer = initialize_agent(
             self.llm_tools,
             self.llm,
-            #agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,     # Can't converse nor return links
-            agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION, # Can converse and do links but too many hallucinations
+            agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,  # Preferably use constant values for clarity
             memory=self.memory,
             verbose=True,
         )
-        
 
+        # Update the prompt template for the agent
         current_prompt = self.agent_executer.agent.llm_chain.prompt.template
         new_prompt = update_prompt(current_prompt)
         self.agent_executer.agent.llm_chain.prompt.template = new_prompt
-        #print(self.agent_executer.agent.llm_chain.prompt.template)
 
+    # Method for querying the language model
     def query(self, query):
         response = self.agent_executer.run(query)
-        #print(self.agent_executer.agent.llm_chain.prompt.template)
 
         return response
 
+    # Method for resetting conversation memory
     def reset_memory(self):
         self.agent_executer.memory.clear()
 
-
+# Function to get a list of tools for the language model
 def get_agent_tools(llm, vector_store, memory):
+    # Define two chains for different purposes
     qa_conversation = ConversationalRetrievalChain.from_llm(
         llm=llm,
         retriever=vector_store.as_retriever(search_kwargs={"k": 4}),
         memory=memory,
     )
-
     qa_sources = RetrievalQAWithSourcesChain.from_llm(
         llm=llm,
         retriever=vector_store.as_retriever(search_kwargs={"k": 4})
     )
 
-    wikipedia = WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper())
-
+    # Create a tool list with different functionalities
     tools = [
         Tool(
             name="QA Conversation",
             func=qa_conversation.run,
             return_direct=True,
             description="Best tool. Always use this first. Answers "
-            "questions and is able to hold a conversation as well.",
+                        "questions and is able to hold a conversation as well.",
         ),
         Tool(
             name="QA Sources",
             func=qa_sources,
             description="Answers questions when a source for "
-            "the answer is needed such as a link or url.",
+                        "the answer is needed such as a link or url.",
         ),
         Tool(
             name="Wikipedia Query",
-            func=wikipedia.run,
+            func=WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper()).run,
             description="Only use this tool when the other tools "
-            "fail to return an answer.",
+                        "fail to return an answer.",
         ),
     ]
 
     return tools
 
-
+# Function to update the prompt template for a conversational agent
 def update_prompt(prompt):
-    """Only used with AgentType.CONVERSATIONAL_REACT_DESCRIPTION."""
+    # Add additional instructions to the prompt
     sub_str = "To use a tool"
     additional_str = (
         "After every new_input you must always use a tool"
@@ -138,7 +101,6 @@ def update_prompt(prompt):
         modified_string = prompt[:index] + additional_str + prompt[index:]
     else:
         print("Substring not found")
-
 
     sub_str = "When you have a response"
     additional_str = (
@@ -155,9 +117,8 @@ def update_prompt(prompt):
     else:
         print("Substring not found")
 
-
     return modified_string
 
-
+# Entry point to the script
 if __name__ == "__main__":
-    pass
+    pass  # Placeholder, script does nothing when executed directly

@@ -1,20 +1,23 @@
-# Database cache of web data from most recently visited urls
+# Import necessary modules and classes
 import os
 import sqlite3
 import threading
 from datetime import datetime
 
+# Constants for web cache configuration
 CACHE_REFRESH_TIME_SECONDS = 60
 MAX_SIZE_BYTES = 8192  # 1000000 ~ 1MB
 MAX_URLS = 50
 
-
+# Define a class for managing a database cache of web data
 class WebCache:
     def __init__(self, database_name="browserchatgpt", num_threads=1):
+        # Initialize database-related attributes
         self.database_name = database_name
         self.database_path = f"{database_name}.db"
         self.datetime_format = "%Y-%m-%d %H:%M:%S"
 
+        # Connect to the local database and create a cursor
         self.local_conn = sqlite3.connect(f"{database_name}.db")
         self.local_cursor = self.local_conn.cursor()
         self.local_cursor.execute(
@@ -28,13 +31,16 @@ class WebCache:
         """
         )
 
+        # Create a lock for thread-safe cursor editing
         self.cursor_edit_lock = threading.Lock()
 
+    # Method to get a connection and cursor
     def get_connection(self):
         conn = sqlite3.connect(f"{self.database_name}.db")
         cursor = conn.cursor()
         return (conn, cursor)
 
+    # Method to add a page to the cache
     def add_page(self, url, text, subpage_urls_str, connection):
         conn, cursor = connection
 
@@ -58,6 +64,7 @@ class WebCache:
 
         self.cursor_edit_lock.release()
 
+    # Method to get a page from the cache
     def get_page(self, url, connection):
         _, cursor = connection
 
@@ -78,10 +85,12 @@ class WebCache:
 
         return text, subpage_urls
 
+    # Method to delete a page from the cache
     def delete_page(self, url, connection):
         _, cursor = connection
         cursor.execute("DELETE FROM pages WHERE url=?", (url,))
 
+    # Method to get the size of the database
     def get_db_size(self):
         file_size = os.path.getsize(self.database_path)
         if file_size > MAX_SIZE_BYTES:
@@ -89,9 +98,8 @@ class WebCache:
 
         return file_size
 
+    # Method to check if a page is cached
     def is_page_cached(self, url, connection, lock=True):
-        """lock should only be set to true when running the function
-        as a standalone function."""
         _, cursor = connection
 
         if lock:
@@ -105,6 +113,7 @@ class WebCache:
 
         return result
 
+    # Method to check if a page is stale and needs refreshing
     def is_page_stale(self, url, connection, lock=True):
         _, cursor = connection
 
@@ -136,13 +145,14 @@ class WebCache:
 
         return stale
 
+    # Placeholder methods for future functionality
     def is_space_for_page(self, page):
         pass
 
     def delete_excessive_storage(self):
         pass
 
-
+# Entry point to test the WebCache class
 if __name__ == "__main__":
     web_cache_database = WebCache("test_cache")
     connection = web_cache_database.get_connection()

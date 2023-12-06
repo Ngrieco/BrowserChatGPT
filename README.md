@@ -15,7 +15,7 @@ BrowserChatGPT is your intelligent web companion, seamlessly integrating into yo
 
 The BrowserChatGPT app is comprised of the following components:
 
-1. **apps/**: This folder houses the files necessary to render the actual app. Currently, we are use PyQt5 to render a small GUI where the user can interact with our LLM.
+1. **apps/**: This folder houses the files necessary to render the actual app. We have a server application that runs the api that allows us to talk to the rest of the application components.
 
 2. **browserchatgpt/**: This folder houses the main functionality that allows us to scrape data from a input website efficiently, store that data, and utilize an LLM to allow users to interact with that data.
 
@@ -24,7 +24,13 @@ The BrowserChatGPT app is comprised of the following components:
    - `web_scraper_concurrent.py`: Efficient web scraper for concurrent scraping of websites and subpages.
    - `web_vector_store.py`: FAISS database to store scraped data / embeddings.
 
-3. **chrome-extension/**: WIP code for packaging this application as a chrome extension.
+3. **chrome-extension/**: Code for packaging this application as a chrome extension.
+   - `index.html`: HTML file defining the structure of the Chrome extension popup.
+   - `background.js`: JavaScript file managing background tasks and handling messages/events for the extension.
+   - `browserchatgpt.js`: JavaScript file facilitating communication with a web server and updating the chatbox in the extension popup.
+   - `script.js`: JavaScript file managing user interactions, query submissions, and chatbox updates in the extension popup.
+   - `style.css`: CSS file specifying the visual styles and layout for the Chrome extension popup.
+   - `manifest.json`:JSON file serving as the manifest for the Chrome extension, configuring properties and details of the extension.
 
 4. **tests/**: Integration tests for components in this application.
 
@@ -65,18 +71,17 @@ Before you begin, ensure you have met the following requirements:
     pip install .
     export OPENAI_API_KEY="YOUR_API_KEY_HERE"
     ```
+5. Go to your Chrome browser and click on extensions -> developer mode -> click "load unpacked" and select the chrome-extension/ folder as a whole. Now you can use the chrome extension UI from the browser.
 
-5. Run the application:
+6. Run the server / LLM application:
 
     ``` bash
-    python3.9 apps/chat_app.py
+    python3.9 apps/server.py
     ```
 
-6. At this point, you should see a GUI open prompting you to input a website for which you want some help on! Enjoy!
+7. After running the above command, you can open the extension by clicking the "C" icon in your Chrome browser while having the website you want open. At this point you will be ready to start talking to BrowserChatGPT! Enjoy!
 
-    ![BrowserChatGPT](images/screenshot.png)
-
-7. To deactivate your virtual environment:
+8. To deactivate your virtual environment:
    
    ``` bash
    deactivate

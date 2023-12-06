@@ -1,3 +1,4 @@
+# Import necessary modules and classes
 import multiprocessing
 import os
 import time
@@ -7,28 +8,32 @@ import html2text
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
+# Set up Chrome options for headless browsing
 driver_options = webdriver.ChromeOptions()
 driver_options.headless = True
 driver_options.add_argument("--headless=new")
+
+# Initialize a Chrome driver
 print("web_scraper_parallel")
 print(f"Process ID: {os.getpid()} creating driver")
 driver = webdriver.Chrome(options=driver_options)
 print(f"Process ID: {os.getpid()} done creating driver")
 
-
+# Utility function to count forward slashes in a URL
 def count_forward_slashes(url):
     return url.count("/")
 
-
+# Utility function to check for duplicate 'https' in a URL
 def has_duplicate_https(url):
     return url.count("https://") > 1
 
-
+# Define a class for parallel web scraping
 class WebScraperParallel:
     def __init__(self, max_urls=100, processes=1):
         self.max_urls = max_urls
         self.num_processes = processes
 
+        # Initialize Chrome options for headless browsing
         driver_options = webdriver.ChromeOptions()
         driver_options.headless = True
         driver_options.add_argument("--headless=new")
@@ -42,7 +47,7 @@ class WebScraperParallel:
         pages = parallel_scrape(url, self.num_processes, self.max_urls)
         return pages
 
-
+# Define a function for parallel scraping
 def parallel_scrape(url, num_processes, max_urls):
     with multiprocessing.Manager() as manager:
         processes = []
@@ -54,7 +59,7 @@ def parallel_scrape(url, num_processes, max_urls):
 
         url_queue.put(url)
         for i in range(num_processes):
-            # create parallel scraping workers
+            # Create parallel scraping workers
             process = multiprocessing.Process(
                 target=scrape_worker,
                 args=(
@@ -76,14 +81,14 @@ def parallel_scrape(url, num_processes, max_urls):
 
         return pages
 
-
+# Define a function for scraping data
 def scrape_data(url, url_queue, visited_urls, pages):
-    """Scrapes data from website and subpages
+    """Scrapes data from website and subpages.
 
     Currently uses selenium and Chrome which runs
-    in headless mode. Uses a breadth first
+    in headless mode. Uses a breadth-first
     search and priority queue where we scrape higher
-    sublinks (less forward slashes in url).
+    sublinks (less forward slashes in URL).
     """
     print(f"Process ID: {os.getpid()} scraping {url}")
 
@@ -118,14 +123,11 @@ def scrape_data(url, url_queue, visited_urls, pages):
             # slashes and add subpage URLs to the queue
             for subpage_url in subpage_urls:
                 if subpage_url not in visited_urls and subpage_url not in added_to_queue:
-                    # print(f"Process ID: {os.getpid()} adding {subpage_url}")
                     url_queue.put(subpage_url)
                     added_to_queue.append(subpage_url)
 
             # Add the URL to the visited_urls set
             visited_urls.append(url)
-
-            # print(f"Process ID: {os.getpid()} visited\n {visited_urls}")
 
         except Exception as e:
             print(e)
@@ -134,10 +136,8 @@ def scrape_data(url, url_queue, visited_urls, pages):
 
     return
 
-
+# Define a function for the scraping worker
 def scrape_worker(url_queue, visited_urls, pages, running_workers, lock, max_urls):
-    # driver_id = int(multiprocessing.current_process().name.split("_")[-1])
-
     print(f"Starting Process ID: {os.getpid()}")
     while True:
         lock.acquire()
@@ -155,11 +155,9 @@ def scrape_worker(url_queue, visited_urls, pages, running_workers, lock, max_url
             if url in visited_urls:
                 continue
 
-            # scrape_url(url, url_queue, visited_urls)
             scrape_data(url, url_queue, visited_urls, pages)
         else:
             # Sleep briefly if the queue is empty to avoid busy-waiting
-            # print(f"Empty queue process ID: {os.getpid()} sleeping")
             lock.release()
             time.sleep(1)
 
@@ -167,7 +165,7 @@ def scrape_worker(url_queue, visited_urls, pages, running_workers, lock, max_url
 
     print(f"Exiting Process ID: {os.getpid()}")
 
-
+# Main block for testing the parallel web scraper
 if __name__ == "__main__":
     print("Hello World")
 
