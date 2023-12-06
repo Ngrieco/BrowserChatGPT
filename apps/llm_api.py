@@ -14,7 +14,7 @@ class LLMApp():
     def __init__(self):
         num_threads = 3
         max_links = 100
-        database_name = "web_llm"
+        database_name = "web_llm_2"
         pages = [{"url": "NA", "text": "Empty"}]
         vs_lock = threading.Lock()
         self.vector_store = WebVectorStore(pages, vs_lock)
@@ -48,7 +48,8 @@ llm_app = LLMApp()
 @app.route('/submit_url', methods=['POST'])
 def submit_url():
     data = request.get_json()
-    requested_url = data['url']
+    llm_app.vector_store.reset()
+    requested_url = "https://" + data['url']
     valid_url = validators.url(requested_url)
     if valid_url:
         try:
