@@ -16,6 +16,7 @@ dependencies = [
     "urllib3 == 2.0.6",
     "Flask == 3.0.0",
     "gevent == 23.9.1",
+    "wikipedia == 1.4.0",
     "validators"
 ]
 
