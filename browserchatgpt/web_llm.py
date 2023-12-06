@@ -11,7 +11,7 @@ class WebLLM:
     def __init__(self, web_vector_store):
         vector_store = web_vector_store.faiss
 
-        self.llm = OpenAI(temperature=0)
+        self.llm = OpenAI(temperature=0.2)
 
         self.memory = ConversationBufferMemory(
             memory_key="chat_history", return_messages=True
@@ -27,6 +27,7 @@ class WebLLM:
             verbose=True,
         )
         
+
         current_prompt = self.agent_executer.agent.llm_chain.prompt.template
         new_prompt = update_prompt(current_prompt)
         self.agent_executer.agent.llm_chain.prompt.template = new_prompt
@@ -34,6 +35,8 @@ class WebLLM:
 
     def query(self, query):
         response = self.agent_executer.run(query)
+        #print(self.agent_executer.agent.llm_chain.prompt.template)
+
         return response
 
     def reset_memory(self):
@@ -83,9 +86,9 @@ def update_prompt(prompt):
     """Only used with AgentType.CONVERSATIONAL_REACT_DESCRIPTION."""
     sub_str = "To use a tool"
     additional_str = (
-        "You must always try to use a tool when responding "
-        "to a question.\nOnly when a tool doesn't contain an answer "
-        "can you attempt to respond.\n\n"
+        "After every new_input you must always use a tool"
+        "\nIf that tool doesn't contain an answer "
+        "only then can you respond without a tool.\n\n"
     )
 
     index = prompt.find(sub_str)
@@ -94,9 +97,10 @@ def update_prompt(prompt):
     else:
         print("Substring not found")
 
+
     sub_str = "When you have a response"
     additional_str = (
-        "You are not allowed to respond without using a tool first.\n"
+        "You are not allowed to respond without a tool after a new_input\n"
         "If the tool was unable to find the answer, let the user know.\n"
         "Don't answer any questions that don't have answers in one of the tools.\n"
     )
@@ -108,6 +112,7 @@ def update_prompt(prompt):
         )
     else:
         print("Substring not found")
+
 
     return modified_string
 
