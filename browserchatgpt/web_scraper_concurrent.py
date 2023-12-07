@@ -1,3 +1,4 @@
+# Import necessary modules and classes
 import threading
 import time
 from urllib.parse import urlparse
@@ -7,43 +8,43 @@ import validators
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
-
+# Utility function to count forward slashes in a URL
 def count_forward_slashes(url):
     return url.count("/")
 
-
+# Utility function to check for duplicate 'https' in a URL
 def has_duplicate_https(url):
     return url.count("https://") > 1
 
-
+# Define a class for concurrent web scraping
 class WebScraperConcurrent:
     def __init__(
         self, web_cache, vector_store, vector_lock, max_links=10, num_threads=3
     ):
+        # Initialize the web scraper with specified parameters
         self.max_links = max_links
-
         self.web_cache = web_cache
         self.cache_lock = threading.Lock()
         self.cache_connections = [None for _ in range(num_threads + 1)]
-
         self.vector_store = vector_store
         self.vector_lock = vector_lock
-
         self.visited_urls = set()
         self.unvisited_urls = []
         self.unvisited_lock = threading.Lock()
 
+        # Set up Chrome options for headless browsing
         driver_options = webdriver.ChromeOptions()
         driver_options.headless = True
         driver_options.add_argument("--headless=new")
 
+        # Set the number of threads and initialize thread drivers
         self.num_threads = num_threads
         self.thread_drivers = [
             webdriver.Chrome(options=driver_options) for _ in range(num_threads + 1)
         ]
 
+        # Create threads for concurrent scraping
         self.threads = self.create_threads()
-
         self.running_threads = 0
 
     def __exit__(self):
@@ -52,7 +53,7 @@ class WebScraperConcurrent:
             driver.quit()
 
     def create_threads(self):
-        print("Creating threads")
+        # Create threads for concurrent scraping
         threads = [
             threading.Thread(
                 target=self.concurrent_scrape_data,
@@ -73,22 +74,19 @@ class WebScraperConcurrent:
         return threads
 
     def scrape(self, starting_url):
-        # Reset vector store for new website
+        # Reset vector store for a new website
         self.vector_store.reset()
 
         print(f"Adding {starting_url} to the scrape queue.")
         if starting_url[-1] != "/":
             starting_url = starting_url + "/"
 
-        # By only adding the starting url, if we were previously
-        # scraping another website and changed sites, we remove
-        # all previous URLs from the queue.
         self.unvisited_lock.acquire()
         self.unvisited_urls = [starting_url]
         self.unvisited_lock.release()
 
         if not self.running_threads:
-            # Only start the threads one
+            # Only start the threads once
             self.running_threads = 1
             print("Thread 0")
             self.threads[0].start()
@@ -105,7 +103,7 @@ class WebScraperConcurrent:
         return
 
     def concurrent_scrape_data(self, first_page=False, driver=None, cache_pool=None):
-        """Scrapes data from website and subpages."""
+        """Scrapes data from a website and its subpages concurrently."""
         if driver is None:
             raise ValueError("No driver specified.")
 
@@ -118,12 +116,12 @@ class WebScraperConcurrent:
 
         while True:
             if len(self.visited_urls) >= self.max_links:
-                print("Reached max URLS.")
+                print("Reached max URLs.")
                 break
 
             self.unvisited_lock.acquire()
             if len(self.unvisited_urls) == 0:
-                # if nothing to scrape, sleep and check later
+                # If nothing to scrape, sleep and check later
                 print(f"Thread {thread_name} sleeping.")
                 self.unvisited_lock.release()
                 time.sleep(2)
@@ -206,11 +204,10 @@ class WebScraperConcurrent:
 
 
 if __name__ == "__main__":
+    # Test the WebScraperConcurrent class
     url = "https://www.bethanychurch.tv"
-
     threads = 3
     max_links = 6
-
     web_scraper = WebScraperConcurrent(max_links=max_links, threads=threads)
     start = time.time()
     web_scraper.scrape(url)

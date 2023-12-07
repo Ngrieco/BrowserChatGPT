@@ -1,8 +1,9 @@
+# Import required classes and modules
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
 
-
+# Define a class for managing vectors associated with web pages
 class WebVectorStore:
     def __init__(self, pages, lock):
         self.lock = lock
@@ -19,7 +20,7 @@ class WebVectorStore:
             docs.extend(splits)
             metadatas.extend([{"source": page["url"]}] * len(splits))
 
-        # Create unique ideas for initial data
+        # Create unique IDs for initial data
         doc_ids = [str(i) for i in range(len(docs))]
         self.vector_ids.extend(doc_ids)
         self.num_tot_ids += len(doc_ids)
@@ -37,7 +38,7 @@ class WebVectorStore:
             docs.extend(splits)
             metadatas.extend([{"source": page["url"]}] * len(splits))
 
-        # Create unique ids for new data
+        # Create unique IDs for new data
         self.lock.acquire()
         num_tot_ids = self.num_tot_ids
         num_new_ids = len(docs)
@@ -57,14 +58,16 @@ class WebVectorStore:
 
     def reset(self):
         if len(self.vector_ids) > 0:
+            self.lock.acquire()
             self.faiss.delete(self.vector_ids)
             self.vector_ids = []
+            self.lock.release()
 
-
+# Main block for testing the WebVectorStore class
 if __name__ == "__main__":
     print("Hello world")
     pages = [{"url": "name", "text": "My name is Nick"}]
     vector_store = WebVectorStore(pages)
 
-    pages2 = [{"url": "birthday", "text": "My birthday is March 14th 1995."}]
+    pages2 = [{"url": "birthday", "text": "My birthday is March 14th, 1995."}]
     vector_store.add_pages(pages2)
